@@ -1,29 +1,36 @@
-name: 'build and deploy vue app'
+name: build and deploy vue app
 
 on:
   push:
-    branches: 
+    branches:
       - main
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to GitHub Container Registry (GHCR)
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ntkfxy --password-stdin
 
       - name: Build Docker Image
-        run: docker build -t ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}:latest .
+        run: docker build -t ghcr.io/ntkfxy/vue-app1:latest .
 
-      - name: Verify Vue Build Output
+      - name: Push Docker Image
+        run: docker push ghcr.io/ntkfxy/vue-app1:latest
+
+      - name: Extract Vue build from container
         run: |
-          CONTAINER_ID=$(docker create ghcr.io/${{ github.actor }}/${{ github.event.repository.name }}:latest)
+          CONTAINER_ID=$(docker create ghcr.io/ntkfxy/vue-app1:latest)
           docker cp $CONTAINER_ID:/usr/share/nginx/html ./dist
           docker rm -v $CONTAINER_ID
-          ls -la ./dist
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
